@@ -1,0 +1,6 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!--
+      Deliberately empty. Nosmai owns the camera and the preview, so this module never
+      opens a capture device and has no UI. The manifest exists only because AGP wants one.
+    -->
+</manifest>

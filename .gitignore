@@ -1,0 +1,37 @@
+node_modules/
+lib/
+build/
+.yarn/*
+!.yarn/patches
+*.log
+.DS_Store
+
+# Android
+android/build/
+android/.gradle/
+android/.cxx/
+android/local.properties
+example/android/.gradle/
+example/android/build/
+example/android/app/build/
+example/android/app/.cxx/
+example/android/local.properties
+example/android/app/debug.keystore
+
+# iOS
+ios/build/
+example/ios/Pods/
+example/ios/build/
+example/ios/*.xcworkspace
+example/ios/.xcode.env.local
+
+# never commit licensed binaries or credentials
+**/libs/nosmai-release.aar
+*.xcframework
+*.nosmai
+.env
+example/src/credentials.local.ts
+.yarn/install-state.gz
+example/.yarn/*
+example/ios/Podfile.lock.bak
+example/ios/Podfile.lock

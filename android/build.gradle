@@ -1,0 +1,114 @@
+// @nosmai/react-native-agora-bridge — Android
+//
+// Every Java/Kotlin dependency is compileOnly: the host app already ships React Native,
+// react-native-agora (which brings Agora's full SDK as `api`) and the Nosmai AAR. A second
+// copy of any of them is a duplicate-class failure at best, two runtimes at worst.
+//
+// The one thing this module builds natively is libnosmai_agora_bridge.so (CMakeLists.txt):
+// a few virtual calls into Agora's C++ IMediaEngine, compiled against vendored public
+// headers and linking nothing from Agora.
+
+buildscript {
+    def kotlinVersion = rootProject.ext.has("kotlinVersion")
+            ? rootProject.ext.get("kotlinVersion")
+            : project.properties["NosmaiAgoraBridge_kotlinVersion"]
+
+    repositories {
+        google()
+        mavenCentral()
+    }
+
+    dependencies {
+        // Only Kotlin. AGP and the React Native Gradle plugin are on the host app's root
+        // buildscript classpath already; re-declaring AGP loads it twice.
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
+    }
+}
+
+apply plugin: "com.android.library"
+apply plugin: "kotlin-android"
+// Generates NativeNosmaiAgoraBridgeSpec from src/NativeNosmaiAgoraBridge.ts at app build time.
+apply plugin: "com.facebook.react"
+
+def safeExtGet(prop, fallback) {
+    rootProject.ext.has(prop) ? rootProject.ext.get(prop) : fallback
+}
+
+// The licensed Nosmai AAR, from the host app's libs/ — the same file
+// @nosmai/react-native-effects-sdk requires. Override with -PnosmaiAarDir=/path.
+def nosmaiAarDir = project.hasProperty("nosmaiAarDir")
+        ? project.property("nosmaiAarDir")
+        : "${rootProject.projectDir}/app/libs"
+
+repositories {
+    google()
+    mavenCentral()
+}
+
+android {
+    namespace "com.nosmai.agorabridge"
+
+    compileSdk safeExtGet("compileSdkVersion", 36)
+    ndkVersion safeExtGet("ndkVersion", "27.1.12297006")
+
+    defaultConfig {
+        minSdk safeExtGet("minSdkVersion", 24)
+        externalNativeBuild {
+            cmake {
+                // c++_shared matches React Native; no std types cross into Agora.
+                arguments "-DANDROID_STL=c++_shared"
+            }
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path "CMakeLists.txt"
+        }
+    }
+
+    // React Native and other libraries ship libc++_shared.so too.
+    packagingOptions {
+        pickFirst "**/libc++_shared.so"
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+
+    buildFeatures {
+        buildConfig false
+    }
+}
+
+dependencies {
+    // Versionless: the React Native Gradle plugin forces the app's exact version.
+    compileOnly "com.facebook.react:react-android"
+
+    // io.agora.rtc.ng.react.AgoraRtcNgModule (its public irisApiEngine + irisApiLock), and
+    // transitively io.agora.base.TextureBufferHelper / io.agora.rtc2.gl.EglBaseProvider from
+    // the full SDK it exposes as `api`. The autolinked project name for npm package
+    // react-native-agora is ':react-native-agora'.
+    if (findProject(":react-native-agora") != null) {
+        compileOnly project(":react-native-agora")
+    } else {
+        logger.warn("[nosmai-agora-bridge] ':react-native-agora' not found — react-native-agora " +
+                "is a peer dependency and must be installed in the app consuming this package.")
+    }
+
+    // com.nosmai.effect.api.NosmaiSDK and TextureFrameCallback. The callback is invoked from
+    // native via CallVoidMethodV, so it must be implemented for real — a reflection Proxy
+    // aborts ART ("return type of CallVoidMethodV does not match void").
+    def nosmaiAar = file("${nosmaiAarDir}/nosmai-release.aar")
+    if (nosmaiAar.exists()) {
+        compileOnly files(nosmaiAar)
+    } else {
+        logger.warn("[nosmai-agora-bridge] ${nosmaiAar} not found — the host app must bundle " +
+                "nosmai-release.aar in app/libs (or pass -PnosmaiAarDir).")
+    }
+}
