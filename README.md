@@ -15,10 +15,22 @@ on Android (no CPU readback) and BGRA frames on iOS (one copy, made by Agora).
 | | |
 |---|---|
 | React Native | 0.81.x, New Architecture |
-| `@nosmai/react-native-effects-sdk` | 1.0.x **with** `+[NosmaiCameraSdk setLiveStreamFrameCallback:]` (iOS) |
+| `@nosmai/react-native-effects-sdk` | a release exporting `+[NosmaiCameraSdk setLiveStreamFrameCallback:]` for iOS (newer than 1.0.0); Android works with 1.0.x |
 | `react-native-agora` | 4.6.x |
 | Android | API 24+, arm64-v8a / armeabi-v7a, `nosmai-release.aar` in `app/libs` |
 | iOS | 15.1+, physical device |
+
+## Installation
+
+```bash
+npm install @nosmai/react-native-agora-bridge react-native-agora @nosmai/react-native-effects-sdk
+cd ios && pod install
+```
+
+- **Android:** put the licensed `nosmai-release.aar` in `android/app/libs/`, the same file
+  the effects SDK already requires (or pass `-PnosmaiAarDir=/path`). The bridge compiles a
+  small native library with the NDK version your app uses.
+- **iOS:** a physical device; Nosmai ships no simulator slice.
 
 ## Usage
 
@@ -54,6 +66,11 @@ engine.leaveChannel();
 engine.release();
 ```
 
+**Mirroring.** Pass `mirror={cameraPosition === 'front'}` to `NosmaiCameraView` and flip
+`cameraPosition` after `NosmaiCameraSdk.switchCamera()` resolves `true`. On iOS the prop
+mirrors at capture, so the remote sees exactly what the preview shows; the bridge never
+mirrors, and `recommendedEncoderConfiguration` keeps Agora's own mirroring off.
+
 Render the local preview with `NosmaiCameraView`, never `RtcSurfaceView` with `uid 0`.
 Switch cameras through Nosmai, never Agora. Don't call `enableLocalVideo` or
 `startPreview`. A second capture pipeline contends for Nosmai's GL worker and costs
@@ -62,7 +79,8 @@ about a third of the frame rate.
 ## Diagnostics
 
 `await NosmaiAgoraBridge.getStats()` returns `pushed`, `dropped`, `failed`,
-`lastResult`, `width` and `height`.
+`lastResult`, `width`, `height` and `inputMode` (`texture2d` on Android, `bgra-bytes` on
+iOS).
 
 - `pushed` not rising means no frames are reaching Agora. On Android, check that
   `registerShareContext` ran before Nosmai initialized (logcat: *"Creating GL context in

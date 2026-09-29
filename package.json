@@ -62,6 +62,10 @@
     "type": "git",
     "url": "git+https://github.com/nosmai/nosmai_agora_bridge_react_native.git"
   },
+  "homepage": "https://github.com/nosmai/nosmai_agora_bridge_react_native#readme",
+  "bugs": {
+    "url": "https://github.com/nosmai/nosmai_agora_bridge_react_native/issues"
+  },
   "author": "Nosmai <admin@nosmai.com>",
   "license": "MIT",
   "publishConfig": {

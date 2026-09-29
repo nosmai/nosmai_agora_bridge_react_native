@@ -34,7 +34,7 @@ Setup: the example app (`example/README.md`) and the browser viewer
 | T06 | Stop → start (second go-live) | second stream works | | | |
 | T07 | "2× start" button | one stream; the duplicate shares or rejects | | | |
 | T08 | Record + stream | both valid | | | |
-| T09 | Effects SDK `startFrameStream` + bridge, stop either first | the other keeps running | | | Android render-mode limitation documented in the effects SDK. |
+| T09 | Effects SDK `startFrameStream` + bridge, stop either first | the other keeps running | | | Android: both switch Nosmai to `DUAL_OUTPUT` and restore the previous mode on stop, so starting the frame stream before the bridge and stopping it first cuts the bridge's output. |
 | T10 | Background / foreground | recovers or fails cleanly | | | |
 | T11 | Documented teardown ×10 | no crash, no leak | | | |
 | T12 | Metro reload while streaming | old tap disarmed; restart works | | | |
